@@ -820,8 +820,8 @@ with tab2:
         
         st.markdown("---")
         
-        # Add to overview button (moved below table)
-        col_add1, col_add2, col_add3 = st.columns([2, 1, 1])
+        # Add to overview button (right justified)
+        col_add1, col_add2 = st.columns([3, 1])
         
         with col_add2:
             if st.button("➕ Add Selected to Overview", use_container_width=True):
@@ -863,8 +863,217 @@ with tab2:
         
         # Project Overview Section
         st.markdown("---")
-        st.markdown("## Project Overview")
-        st.markdown("### Detailed Project Information")
+        
+        # Header with Output Report button
+        col_header, col_button = st.columns([3, 1])
+        
+        with col_header:
+            st.markdown("## Project Overview")
+            st.markdown("### Detailed Project Information")
+        
+        with col_button:
+            if st.button("📄 Output Report", use_container_width=True, type="primary"):
+                if st.session_state.loaded_projects_overview:
+                    # Generate PDF report
+                    try:
+                        from reportlab.lib.pagesizes import letter
+                        from reportlab.lib import colors
+                        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+                        from reportlab.lib.units import inch
+                        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+                        from reportlab.lib.enums import TA_CENTER, TA_LEFT
+                        from io import BytesIO
+                        
+                        # Create PDF in memory
+                        buffer = BytesIO()
+                        doc = SimpleDocTemplate(buffer, pagesize=letter)
+                        elements = []
+                        styles = getSampleStyleSheet()
+                        
+                        # Custom styles
+                        title_style = ParagraphStyle(
+                            'CustomTitle',
+                            parent=styles['Heading1'],
+                            fontSize=24,
+                            textColor=colors.HexColor('#2196f3'),
+                            spaceAfter=30,
+                            alignment=TA_CENTER
+                        )
+                        
+                        heading_style = ParagraphStyle(
+                            'CustomHeading',
+                            parent=styles['Heading2'],
+                            fontSize=16,
+                            textColor=colors.HexColor('#1976d2'),
+                            spaceAfter=12
+                        )
+                        
+                        # Title
+                        elements.append(Paragraph("Displacement Volume Analyzer", title_style))
+                        elements.append(Paragraph("Project Analysis Report", styles['Heading2']))
+                        elements.append(Spacer(1, 0.3*inch))
+                        
+                        # Report info
+                        report_date = datetime.now().strftime('%B %d, %Y at %I:%M %p')
+                        elements.append(Paragraph(f"Report Generated: {report_date}", styles['Normal']))
+                        elements.append(Paragraph(f"Total Projects: {len(st.session_state.loaded_projects_overview)}", styles['Normal']))
+                        elements.append(Spacer(1, 0.3*inch))
+                        
+                        # Individual project details
+                        for idx, project in enumerate(st.session_state.loaded_projects_overview):
+                            if idx > 0:
+                                elements.append(PageBreak())
+                            
+                            # Project header
+                            elements.append(Paragraph(f"Project {project['project_number']}: {project['project_name']}", heading_style))
+                            elements.append(Spacer(1, 0.2*inch))
+                            
+                            # Project information table
+                            proj_data = [
+                                ['Project Number:', str(project['project_number'])],
+                                ['Project Name:', project['project_name']],
+                                ['Designer:', project['designer']],
+                                ['Date:', project['date']],
+                                ['Contact:', project['contact']],
+                                ['Description:', project['description']]
+                            ]
+                            
+                            proj_table = Table(proj_data, colWidths=[2*inch, 4.5*inch])
+                            proj_table.setStyle(TableStyle([
+                                ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e3f2fd')),
+                                ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+                                ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+                                ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+                                ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+                                ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+                                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                            ]))
+                            elements.append(proj_table)
+                            elements.append(Spacer(1, 0.3*inch))
+                            
+                            # Calculation results
+                            elements.append(Paragraph("Primary Product Volume", heading_style))
+                            results = calculate_volume(project['weight'], project['weight_unit'])
+                            
+                            calc_data = [
+                                ['Weight:', f"{project['weight']} {project['weight_unit']}"],
+                                ['Volume (mm³):', f"{results['mm³']:,.2f} mm³"],
+                                ['Volume (cm³):', f"{results['cm³']:,.2f} cm³"],
+                                ['Volume (in³):', f"{results['in³']:,.3f} in³"]
+                            ]
+                            
+                            calc_table = Table(calc_data, colWidths=[2*inch, 4.5*inch])
+                            calc_table.setStyle(TableStyle([
+                                ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e8f5e9')),
+                                ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+                                ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+                                ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+                                ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+                                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                            ]))
+                            elements.append(calc_table)
+                            elements.append(Spacer(1, 0.3*inch))
+                            
+                            # Box volume if available
+                            if project.get('box_volume_mm3', 0) > 0:
+                                elements.append(Paragraph("Secondary Packaging", heading_style))
+                                
+                                box_data = [
+                                    ['Dimensions:', f"{project['box_length']} × {project['box_width']} × {project['box_height']} {project['dimension_unit']}"],
+                                    ['Box Volume:', f"{project['box_volume_mm3']:,.2f} mm³"],
+                                    ['Product Volume:', f"{project['primary_volume_mm3']:,.2f} mm³"],
+                                ]
+                                
+                                # Calculate remaining and efficiency
+                                remaining_mm3 = project['box_volume_mm3'] - project['primary_volume_mm3']
+                                efficiency_pct = (project['primary_volume_mm3'] / project['box_volume_mm3']) * 100 if project['box_volume_mm3'] > 0 else 0
+                                remaining_pct = (remaining_mm3 / project['box_volume_mm3']) * 100 if project['box_volume_mm3'] > 0 else 0
+                                
+                                box_data.extend([
+                                    ['Remaining Volume:', f"{remaining_mm3:,.2f} mm³"],
+                                    ['Volume Efficiency:', f"{efficiency_pct:.1f}%"],
+                                    ['Remaining Space:', f"{remaining_pct:.1f}%"],
+                                ])
+                                
+                                box_table = Table(box_data, colWidths=[2*inch, 4.5*inch])
+                                box_table.setStyle(TableStyle([
+                                    ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#fff3e0')),
+                                    ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+                                    ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+                                    ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+                                    ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+                                    ('FONTSIZE', (0, 0), (-1, -1), 10),
+                                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                                ]))
+                                elements.append(box_table)
+                        
+                        # Comparison section if multiple projects
+                        if len(st.session_state.loaded_projects_overview) > 1:
+                            projects_with_boxes = [p for p in st.session_state.loaded_projects_overview if p.get('box_volume_mm3', 0) > 0]
+                            
+                            if projects_with_boxes:
+                                elements.append(PageBreak())
+                                elements.append(Paragraph("Volume Comparison Summary", heading_style))
+                                elements.append(Spacer(1, 0.2*inch))
+                                
+                                # Comparison table
+                                comp_data = [['Project', 'Box Volume\n(cm³)', 'Product Volume\n(cm³)', 'Remaining\n(cm³)', 'Efficiency\n(%)']]
+                                
+                                for project in projects_with_boxes:
+                                    box_cm3 = project['box_volume_mm3'] * 0.001
+                                    prod_cm3 = project['primary_volume_mm3'] * 0.001
+                                    remaining_cm3 = (project['box_volume_mm3'] - project['primary_volume_mm3']) * 0.001
+                                    efficiency = (project['primary_volume_mm3'] / project['box_volume_mm3']) * 100 if project['box_volume_mm3'] > 0 else 0
+                                    
+                                    comp_data.append([
+                                        project['project_name'],
+                                        f"{box_cm3:,.2f}",
+                                        f"{prod_cm3:,.2f}",
+                                        f"{remaining_cm3:,.2f}",
+                                        f"{efficiency:.1f}%"
+                                    ])
+                                
+                                comp_table = Table(comp_data, colWidths=[2*inch, 1.1*inch, 1.1*inch, 1.1*inch, 1.1*inch])
+                                comp_table.setStyle(TableStyle([
+                                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2196f3')),
+                                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                                    ('FONTSIZE', (0, 0), (-1, 0), 10),
+                                    ('FONTSIZE', (0, 1), (-1, -1), 9),
+                                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')])
+                                ]))
+                                elements.append(comp_table)
+                        
+                        # Build PDF
+                        doc.build(elements)
+                        
+                        # Prepare for download
+                        buffer.seek(0)
+                        pdf_bytes = buffer.getvalue()
+                        
+                        # Create download button
+                        filename = f"DVA_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                        st.download_button(
+                            label="⬇️ Download PDF Report",
+                            data=pdf_bytes,
+                            file_name=filename,
+                            mime="application/pdf",
+                            use_container_width=True
+                        )
+                        
+                        st.success("✅ PDF report generated successfully!")
+                        
+                    except ImportError:
+                        st.error("❌ PDF generation requires the 'reportlab' library. Please install it: pip install reportlab")
+                    except Exception as e:
+                        st.error(f"❌ Error generating PDF: {str(e)}")
+                else:
+                    st.warning("⚠️ No projects in overview. Add projects to generate a report.")
         
         # Initialize overview list
         if 'loaded_projects_overview' not in st.session_state:
