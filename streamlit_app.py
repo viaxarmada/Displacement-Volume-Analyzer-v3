@@ -365,9 +365,26 @@ with tab1:
     if 'project_to_load' in st.session_state and st.session_state.project_to_load is not None:
         project = st.session_state.project_to_load
         
-        # Load all project data into the form (non-widget keys first)
+        # Update all session state values (these will be read by widgets below)
         st.session_state.current_project_id = project['project_number']
         st.session_state.current_project_number = project['project_number']
+        st.session_state.project_name = project['project_name']
+        st.session_state.designer = project['designer']
+        st.session_state.project_description = project['description']
+        st.session_state.contact_info = project['contact']
+        
+        # Load calculator values
+        st.session_state.primary_weight = project.get('weight', 100.0)
+        st.session_state.primary_unit = project.get('weight_unit', 'grams')
+        st.session_state.primary_volume_mm3 = project.get('primary_volume_mm3', 0.0)
+        
+        # Load box values
+        st.session_state.box_length = project.get('box_length', 10.0)
+        st.session_state.box_width = project.get('box_width', 10.0)
+        st.session_state.box_height = project.get('box_height', 10.0)
+        st.session_state.dimension_unit = project.get('dimension_unit', 'cm')
+        st.session_state.box_result_unit = project.get('box_result_unit', 'cubic cm')
+        st.session_state.box_volume_mm3 = project.get('box_volume_mm3', 0.0)
         
         # Convert date string to date object if needed
         try:
@@ -378,15 +395,12 @@ with tab1:
         except:
             st.session_state.project_date = datetime.now().date()
         
-        # Clear the load flag
+        # Clear the load flag BEFORE showing message to prevent loop
         st.session_state.project_to_load = None
         
         # Show success message
-        st.success(f"✅ Project {project['project_number']} loaded successfully! You can now edit it.")
-        
-        # Force rerun to populate widget values
-        time.sleep(0.5)
-        st.rerun()
+        st.success(f"✅ Project {project['project_number']} - {project['project_name']} loaded successfully!")
+        st.info("📝 All fields have been populated. You can now edit and save changes.")
     
     # Project Info Section
     st.markdown("## Project Information")
@@ -470,16 +484,21 @@ with tab1:
         weight = st.number_input(
             "Weight of Water",
             min_value=0.0,
-            value=100.0,
+            value=float(st.session_state.get('primary_weight', 100.0)),
             step=0.1,
             format="%.2f",
             key="primary_weight"
         )
         
+        # Get index for unit selectbox
+        unit_options = ["grams", "ounces", "pounds", "kilograms"]
+        current_unit = st.session_state.get('primary_unit', 'grams')
+        unit_index = unit_options.index(current_unit) if current_unit in unit_options else 0
+        
         unit = st.selectbox(
             "Unit",
-            ["grams", "ounces", "pounds", "kilograms"],
-            index=0,
+            unit_options,
+            index=unit_index,
             key="primary_unit"
         )
         
@@ -548,7 +567,7 @@ with tab1:
         box_length = st.number_input(
             "Length",
             min_value=0.0,
-            value=10.0,
+            value=float(st.session_state.get('box_length', 10.0)),
             step=0.1,
             format="%.2f",
             key="box_length"
@@ -557,7 +576,7 @@ with tab1:
         box_width = st.number_input(
             "Width",
             min_value=0.0,
-            value=10.0,
+            value=float(st.session_state.get('box_width', 10.0)),
             step=0.1,
             format="%.2f",
             key="box_width"
@@ -566,23 +585,33 @@ with tab1:
         box_height = st.number_input(
             "Height",
             min_value=0.0,
-            value=10.0,
+            value=float(st.session_state.get('box_height', 10.0)),
             step=0.1,
             format="%.2f",
             key="box_height"
         )
         
+        # Get index for dimension unit selectbox
+        dim_unit_options = ["cm", "mm", "inches", "feet"]
+        current_dim_unit = st.session_state.get('dimension_unit', 'cm')
+        dim_unit_index = dim_unit_options.index(current_dim_unit) if current_dim_unit in dim_unit_options else 0
+        
         dimension_unit = st.selectbox(
             "Dimension Unit",
-            ["cm", "mm", "inches", "feet"],
-            index=0,
+            dim_unit_options,
+            index=dim_unit_index,
             key="dimension_unit"
         )
         
+        # Get index for result unit selectbox
+        result_unit_options = ["cubic cm", "cubic mm", "cubic inches"]
+        current_result_unit = st.session_state.get('box_result_unit', 'cubic cm')
+        result_unit_index = result_unit_options.index(current_result_unit) if current_result_unit in result_unit_options else 0
+        
         result_unit_box = st.selectbox(
             "Result Unit",
-            ["cubic cm", "cubic mm", "cubic inches"],
-            index=0,
+            result_unit_options,
+            index=result_unit_index,
             key="box_result_unit"
         )
         
