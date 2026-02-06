@@ -652,6 +652,14 @@ with tab1:
                 
                 remaining_volume_result = remaining_volume_mm3 * mm3_to_remaining[remaining_unit]
                 
+                # Calculate Volume Efficiency Percentage
+                if box_volume_mm3 > 0:
+                    volume_efficiency_percentage = (st.session_state.primary_volume_mm3 / box_volume_mm3) * 100
+                    remaining_space_percentage = (remaining_volume_mm3 / box_volume_mm3) * 100
+                else:
+                    volume_efficiency_percentage = 0
+                    remaining_space_percentage = 0
+                
                 # Display remaining volume
                 col_a, col_b = st.columns(2)
                 
@@ -677,7 +685,7 @@ with tab1:
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # Final remaining volume
+                # Remaining volume
                 color = "#4caf50" if remaining_volume_result > 0 else "#f44336"
                 st.markdown(f"""
                 <div class="metric-card" style="border-color: {color};">
@@ -687,6 +695,49 @@ with tab1:
                 </div>
                 """, unsafe_allow_html=True)
                 
+                # Volume Efficiency Percentage
+                st.markdown("---")
+                col_eff1, col_eff2 = st.columns(2)
+                
+                with col_eff1:
+                    # Determine color based on efficiency
+                    if volume_efficiency_percentage >= 80:
+                        eff_color = "#4caf50"  # Green - Good efficiency
+                        eff_status = "Excellent"
+                    elif volume_efficiency_percentage >= 60:
+                        eff_color = "#8bc34a"  # Light green - Acceptable
+                        eff_status = "Good"
+                    elif volume_efficiency_percentage >= 40:
+                        eff_color = "#ffc107"  # Yellow - Moderate
+                        eff_status = "Moderate"
+                    else:
+                        eff_color = "#ff9800"  # Orange - Low efficiency
+                        eff_status = "Low"
+                    
+                    st.markdown(f"""
+                    <div class="metric-card" style="border-color: {eff_color};">
+                        <div style="color: {eff_color}; font-weight: bold; font-size: 1.2rem;">Volume Efficiency</div>
+                        <div style="font-size: 2.5rem; font-weight: bold; color: {eff_color}; margin: 10px 0;">
+                            {volume_efficiency_percentage:.1f}%
+                        </div>
+                        <div class="result-unit">Space Utilization - {eff_status}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col_eff2:
+                    # Remaining space percentage
+                    remaining_color = "#2196f3" if remaining_space_percentage > 0 else "#f44336"
+                    st.markdown(f"""
+                    <div class="metric-card" style="border-color: {remaining_color};">
+                        <div style="color: {remaining_color}; font-weight: bold; font-size: 1.2rem;">Remaining Space</div>
+                        <div style="font-size: 2.5rem; font-weight: bold; color: {remaining_color}; margin: 10px 0;">
+                            {remaining_space_percentage:.1f}%
+                        </div>
+                        <div class="result-unit">Available Capacity</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                # Status messages
                 if remaining_volume_result < 0:
                     st.error("⚠️ Warning: Product volume exceeds box capacity!")
                 else:
@@ -978,7 +1029,7 @@ with tab2:
                     with st.container():
                         st.markdown(f"### {project['project_name']}")
                         
-                        col1, col2, col3, col4 = st.columns(4)
+                        col1, col2, col3, col4, col5 = st.columns(5)
                         
                         with col1:
                             st.metric(
@@ -1005,6 +1056,29 @@ with tab2:
                             st.caption(comparison_unit)
                         
                         with col4:
+                            # Volume Efficiency Percentage
+                            if percentage_used >= 80:
+                                eff_delta = "Excellent"
+                                eff_color = "normal"
+                            elif percentage_used >= 60:
+                                eff_delta = "Good"
+                                eff_color = "normal"
+                            elif percentage_used >= 40:
+                                eff_delta = "Moderate"
+                                eff_color = "off"
+                            else:
+                                eff_delta = "Low"
+                                eff_color = "inverse"
+                            
+                            st.metric(
+                                "Volume Efficiency",
+                                f"{percentage_used:.1f}%",
+                                delta=eff_delta,
+                                delta_color=eff_color
+                            )
+                            st.caption("Space Utilization")
+                        
+                        with col5:
                             # Visual indicator
                             if percentage_remaining >= 20:
                                 st.success("✅ Good Space")
@@ -1016,6 +1090,7 @@ with tab2:
                         # Progress bar
                         if box_volume_mm3 > 0:
                             st.progress(min(percentage_used / 100, 1.0))
+                            st.caption(f"Space Utilization: {percentage_used:.1f}% | Remaining: {percentage_remaining:.1f}%")
                         
                         st.markdown("---")
             else:
