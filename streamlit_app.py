@@ -186,7 +186,6 @@ with col1:
 
 with col2:
     st.markdown("# Displacement Volume Analyzer")
-    st.markdown("### Water Displacement Calculator")
     st.markdown("*Based on Archimedes' Principle - Water density at 4°C (1 g/mL)*")
 
 st.markdown("---")
@@ -361,47 +360,6 @@ tab1, tab2, tab3, tab4 = st.tabs(["🔬 Analyzer", "📁 Project Results", "📋
 
 # TAB 1: Analyzer
 with tab1:
-    # Check if there's a project to load from Project Results tab
-    if 'project_to_load' in st.session_state and st.session_state.project_to_load is not None:
-        project = st.session_state.project_to_load
-        
-        # Update all session state values (these will be read by widgets below)
-        st.session_state.current_project_id = project['project_number']
-        st.session_state.current_project_number = project['project_number']
-        st.session_state.project_name = project['project_name']
-        st.session_state.designer = project['designer']
-        st.session_state.project_description = project['description']
-        st.session_state.contact_info = project['contact']
-        
-        # Load calculator values
-        st.session_state.primary_weight = project.get('weight', 100.0)
-        st.session_state.primary_unit = project.get('weight_unit', 'grams')
-        st.session_state.primary_volume_mm3 = project.get('primary_volume_mm3', 0.0)
-        
-        # Load box values
-        st.session_state.box_length = project.get('box_length', 10.0)
-        st.session_state.box_width = project.get('box_width', 10.0)
-        st.session_state.box_height = project.get('box_height', 10.0)
-        st.session_state.dimension_unit = project.get('dimension_unit', 'cm')
-        st.session_state.box_result_unit = project.get('box_result_unit', 'cubic cm')
-        st.session_state.box_volume_mm3 = project.get('box_volume_mm3', 0.0)
-        
-        # Convert date string to date object if needed
-        try:
-            if isinstance(project['date'], str):
-                st.session_state.project_date = datetime.strptime(project['date'], '%Y-%m-%d').date()
-            else:
-                st.session_state.project_date = project['date']
-        except:
-            st.session_state.project_date = datetime.now().date()
-        
-        # Clear the load flag BEFORE showing message to prevent loop
-        st.session_state.project_to_load = None
-        
-        # Show success message
-        st.success(f"✅ Project {project['project_number']} - {project['project_name']} loaded successfully!")
-        st.info("📝 All fields have been populated. You can now edit and save changes.")
-    
     # Project Info Section
     st.markdown("## Project Information")
     
@@ -783,12 +741,9 @@ with tab2:
     st.markdown("## Project Results")
     
     # Load Project button at top
-    col_button1, col_button2, col_button3 = st.columns([2, 1, 1])
+    col_button1, col_button2 = st.columns([3, 1])
     
     with col_button2:
-        load_to_calc_btn = st.button("📂 Load to Analyzer", use_container_width=True, type="primary")
-    
-    with col_button3:
         delete_btn = st.button("🗑️ Delete Selected", use_container_width=True)
     
     if st.session_state.projects:
@@ -871,6 +826,10 @@ with tab2:
         with col_add2:
             if st.button("➕ Add Selected to Overview", use_container_width=True):
                 if st.session_state.selected_project_indices:
+                    # Add all selected projects to overview
+                    if 'loaded_projects_overview' not in st.session_state:
+                        st.session_state.loaded_projects_overview = []
+                    
                     added_count = 0
                     for idx in st.session_state.selected_project_indices:
                         project = st.session_state.projects[idx]
@@ -885,60 +844,6 @@ with tab2:
                         st.info("All selected projects are already in overview")
                 else:
                     st.warning("⚠️ Please select at least one project")
-        
-        # Handle Load to Calculator button
-        if load_to_calc_btn:
-            if st.session_state.selected_project_indices:
-                # Load the first selected project to calculator
-                first_selected_idx = st.session_state.selected_project_indices[0]
-                selected_project = st.session_state.projects[first_selected_idx]
-                
-                # Set ALL session state values for the project (these are NOT widget keys, so it's safe)
-                st.session_state.current_project_id = selected_project['project_number']
-                st.session_state.current_project_number = selected_project['project_number']
-                st.session_state.project_name = selected_project['project_name']
-                st.session_state.designer = selected_project['designer']
-                st.session_state.project_description = selected_project['description']
-                st.session_state.contact_info = selected_project['contact']
-                
-                # Convert date string to date object
-                try:
-                    if isinstance(selected_project['date'], str):
-                        st.session_state.project_date = datetime.strptime(selected_project['date'], '%Y-%m-%d').date()
-                    else:
-                        st.session_state.project_date = selected_project['date']
-                except:
-                    st.session_state.project_date = datetime.now().date()
-                
-                # Load calculator values
-                st.session_state.primary_weight = selected_project['weight']
-                st.session_state.primary_unit = selected_project['weight_unit']
-                st.session_state.primary_volume_mm3 = selected_project['primary_volume_mm3']
-                
-                # Load box values
-                st.session_state.box_length = selected_project['box_length']
-                st.session_state.box_width = selected_project['box_width']
-                st.session_state.box_height = selected_project['box_height']
-                st.session_state.dimension_unit = selected_project['dimension_unit']
-                st.session_state.box_result_unit = selected_project['box_result_unit']
-                st.session_state.box_volume_mm3 = selected_project['box_volume_mm3']
-                
-                # Store project to load flag
-                st.session_state.project_to_load = selected_project
-                
-                # Add all selected projects to overview
-                if 'loaded_projects_overview' not in st.session_state:
-                    st.session_state.loaded_projects_overview = []
-                
-                for idx in st.session_state.selected_project_indices:
-                    project = st.session_state.projects[idx]
-                    if not any(p['project_number'] == project['project_number'] for p in st.session_state.loaded_projects_overview):
-                        st.session_state.loaded_projects_overview.append(project)
-                
-                st.success(f"✅ Project {selected_project['project_number']} - {selected_project['project_name']} loaded to Analyzer")
-                st.info("💡 Switch to the Analyzer tab to see and edit the project")
-            else:
-                st.warning("⚠️ Please select at least one project")
         
         # Handle Delete button
         if delete_btn:
