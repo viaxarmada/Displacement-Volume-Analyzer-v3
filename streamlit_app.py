@@ -430,9 +430,12 @@ with tab1:
         )
         st.session_state.current_project_number = int(project_number)
         
+        # Initialize project info if not present
+        if 'project_name' not in st.session_state:
+            st.session_state.project_name = 'New Project'
+        
         project_name = st.text_input(
             "Project Name",
-            value=st.session_state.get('project_name', 'New Project'),
             placeholder="Enter project name",
             key="project_name"
         )
@@ -450,16 +453,22 @@ with tab1:
         )
     
     with col2:
+        # Initialize fields if not present
+        if 'designer' not in st.session_state:
+            st.session_state.designer = 'Designer Name'
+        if 'project_description' not in st.session_state:
+            st.session_state.project_description = 'Project description here'
+        if 'contact_info' not in st.session_state:
+            st.session_state.contact_info = 'contact@email.com'
+        
         designer = st.text_input(
             "Designer",
-            value=st.session_state.get('designer', 'Designer Name'),
             placeholder="Enter designer name",
             key="designer"
         )
         
         description = st.text_area(
             "Description",
-            value=st.session_state.get('project_description', 'Project description here'),
             placeholder="Enter project description",
             height=100,
             key="project_description"
@@ -467,7 +476,6 @@ with tab1:
         
         contact = st.text_input(
             "Contact Info",
-            value=st.session_state.get('contact_info', 'contact@email.com'),
             placeholder="Email or phone",
             key="contact_info"
         )
@@ -481,24 +489,23 @@ with tab1:
     with col1:
         st.markdown("### Input")
         
+        # Initialize session state if not present
+        if 'primary_weight' not in st.session_state:
+            st.session_state.primary_weight = 100.0
+        if 'primary_unit' not in st.session_state:
+            st.session_state.primary_unit = 'grams'
+        
         weight = st.number_input(
             "Weight of Water",
             min_value=0.0,
-            value=float(st.session_state.get('primary_weight', 100.0)),
             step=0.1,
             format="%.2f",
             key="primary_weight"
         )
         
-        # Get index for unit selectbox
-        unit_options = ["grams", "ounces", "pounds", "kilograms"]
-        current_unit = st.session_state.get('primary_unit', 'grams')
-        unit_index = unit_options.index(current_unit) if current_unit in unit_options else 0
-        
         unit = st.selectbox(
             "Unit",
-            unit_options,
-            index=unit_index,
+            ["grams", "ounces", "pounds", "kilograms"],
             key="primary_unit"
         )
         
@@ -563,11 +570,22 @@ with tab1:
     with col1:
         st.markdown("### Input Box Dimensions")
         
+        # Initialize session state if not present
+        if 'box_length' not in st.session_state:
+            st.session_state.box_length = 10.0
+        if 'box_width' not in st.session_state:
+            st.session_state.box_width = 10.0
+        if 'box_height' not in st.session_state:
+            st.session_state.box_height = 10.0
+        if 'dimension_unit' not in st.session_state:
+            st.session_state.dimension_unit = 'cm'
+        if 'box_result_unit' not in st.session_state:
+            st.session_state.box_result_unit = 'cubic cm'
+        
         # Dimension inputs
         box_length = st.number_input(
             "Length",
             min_value=0.0,
-            value=float(st.session_state.get('box_length', 10.0)),
             step=0.1,
             format="%.2f",
             key="box_length"
@@ -576,7 +594,6 @@ with tab1:
         box_width = st.number_input(
             "Width",
             min_value=0.0,
-            value=float(st.session_state.get('box_width', 10.0)),
             step=0.1,
             format="%.2f",
             key="box_width"
@@ -585,33 +602,20 @@ with tab1:
         box_height = st.number_input(
             "Height",
             min_value=0.0,
-            value=float(st.session_state.get('box_height', 10.0)),
             step=0.1,
             format="%.2f",
             key="box_height"
         )
         
-        # Get index for dimension unit selectbox
-        dim_unit_options = ["cm", "mm", "inches", "feet"]
-        current_dim_unit = st.session_state.get('dimension_unit', 'cm')
-        dim_unit_index = dim_unit_options.index(current_dim_unit) if current_dim_unit in dim_unit_options else 0
-        
         dimension_unit = st.selectbox(
             "Dimension Unit",
-            dim_unit_options,
-            index=dim_unit_index,
+            ["cm", "mm", "inches", "feet"],
             key="dimension_unit"
         )
         
-        # Get index for result unit selectbox
-        result_unit_options = ["cubic cm", "cubic mm", "cubic inches"]
-        current_result_unit = st.session_state.get('box_result_unit', 'cubic cm')
-        result_unit_index = result_unit_options.index(current_result_unit) if current_result_unit in result_unit_options else 0
-        
         result_unit_box = st.selectbox(
             "Result Unit",
-            result_unit_options,
-            index=result_unit_index,
+            ["cubic cm", "cubic mm", "cubic inches"],
             key="box_result_unit"
         )
         
@@ -782,7 +786,7 @@ with tab2:
     col_button1, col_button2, col_button3 = st.columns([2, 1, 1])
     
     with col_button2:
-        load_to_calc_btn = st.button("📂 Load to Calculator", use_container_width=True, type="primary")
+        load_to_calc_btn = st.button("📂 Load to Analyzer", use_container_width=True, type="primary")
     
     with col_button3:
         delete_btn = st.button("🗑️ Delete Selected", use_container_width=True)
